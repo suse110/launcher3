@@ -21,6 +21,8 @@ import android.animation.ValueAnimator;
 import android.animation.ValueAnimator.AnimatorUpdateListener;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.content.res.Resources;
@@ -139,7 +141,12 @@ public class DeleteDropTarget extends ButtonDropTarget {
 
     @Override
     public boolean acceptDrop(DragObject d) {
-        return willAcceptDrop(d.dragInfo);
+        animateToTrashAndCompleteDrop(d);
+        if(isUninstallFromDisableAllApp(d)){
+            d.cancelled = true;
+        }
+        return false;
+//        return willAcceptDrop(d.dragInfo);
     }
 
     public static boolean willAcceptDrop(Object info) {
@@ -174,14 +181,29 @@ public class DeleteDropTarget extends ButtonDropTarget {
         }
         return false;
     }
+    private boolean isShortcut(DragSource source, Object info) {
+        return source.supportsAppInfoDropTarget() && (info instanceof ShortcutInfo);
+    }
 
     @Override
     public void onDragStart(DragSource source, Object info, int dragAction) {
         boolean isVisible = true;
-        boolean useUninstallLabel = !LauncherAppState.isDisableAllApps() &&
-                isAllAppsApplication(source, info);
+        // boolean useUninstallLabel = !LauncherAppState.isDisableAllApps() && isAllAppsApplication(source, info);
+        boolean useUninstallLabel =  isShortcut(source,info);//by simon.z
         boolean useDeleteLabel = !useUninstallLabel && source.supportsDeleteDropTarget();
 
+        if(info instanceof ShortcutInfo){//by simon.z
+            try{
+                ShortcutInfo appInfo = (ShortcutInfo) info;
+                PackageManager packageManager = getContext().getPackageManager();
+                ApplicationInfo ai = packageManager.getApplicationInfo(appInfo.intent.getComponent().getPackageName(), 0);
+                if((ai.flags & ApplicationInfo.FLAG_SYSTEM) == 0){
+                    appInfo.flags |= AppInfo.DOWNLOADED_FLAG;
+                }
+            } catch (PackageManager.NameNotFoundException e) {
+                e.printStackTrace();
+            }
+        }       
         // If we are dragging an application from AppsCustomize, only show the control if we can
         // delete the app (it was downloaded), and rename the string to "uninstall" in such a case.
         // Hide the delete target if it is a widget from AppsCustomize.
@@ -289,7 +311,12 @@ public class DeleteDropTarget extends ButtonDropTarget {
         }
         return false;
     }
-
+    private boolean isUninstallFromDisableAllApp(DragObject d) { //add by simon.z
+        if (d.dragInfo instanceof LauncherAppWidgetInfo) {
+            return false;
+        }
+        return true;
+    }
     private void completeDrop(DragObject d) {
         ItemInfo item = (ItemInfo) d.dragInfo;
         boolean wasWaitingForUninstall = mWaitingForUninstall;
@@ -299,6 +326,10 @@ public class DeleteDropTarget extends ButtonDropTarget {
             AppInfo appInfo = (AppInfo) item;
             mLauncher.startApplicationUninstallActivity(appInfo.componentName, appInfo.flags,
                     appInfo.user);
+        } else if (isUninstallFromDisableAllApp(d)) {//add by simon.z
+            ShortcutInfo shortcut = (ShortcutInfo) item;
+            mWaitingForUninstall = mLauncher.startApplicationUninstallActivity(
+                    shortcut.intent.getComponent(), shortcut.flags, shortcut.user);
         } else if (isUninstallFromWorkspace(d)) {
             ShortcutInfo shortcut = (ShortcutInfo) item;
             if (shortcut.intent != null && shortcut.intent.getComponent() != null) {

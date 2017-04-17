@@ -93,6 +93,7 @@ public class InfoDropTarget extends ButtonDropTarget {
 
         if (componentName != null) {
             mLauncher.startApplicationDetailsActivity(componentName, user);
+            d.cancelled = true;//by simon.z
         }
 
         // There is no post-drop animation, so clean up the DragView now
