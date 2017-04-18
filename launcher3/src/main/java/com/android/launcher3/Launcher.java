@@ -3328,14 +3328,15 @@ public class Launcher extends Activity
         boolean material = Utilities.isLmpOrAbove();
 
         final Resources res = getResources();
-
+        // 定义了一些动画时长
         final int duration = res.getInteger(R.integer.config_appsCustomizeZoomInTime);
         final int fadeDuration = res.getInteger(R.integer.config_appsCustomizeFadeInTime);
         final int revealDuration = res.getInteger(R.integer.config_appsCustomizeRevealTime);
         final int itemsAlphaStagger =
                 res.getInteger(R.integer.config_appsCustomizeItemsAlphaStagger);
 
-        final float scale = (float) res.getInteger(R.integer.config_appsCustomizeZoomScaleFactor);
+        final float scale = (float) res.getInteger(R.integer.config_appsCustomizeZoomScaleFactor);//缩放大小
+        // 从Workspace切换到AppsCustomizeTabHost  
         final View fromView = mWorkspace;
         final AppsCustomizeTabHost toView = mAppsCustomizeTabHost;
 
@@ -3344,7 +3345,8 @@ public class Launcher extends Activity
         Workspace.State workspaceState = contentType == AppsCustomizePagedView.ContentType.Widgets ?
                 Workspace.State.OVERVIEW_HIDDEN : Workspace.State.NORMAL_HIDDEN;
         Animator workspaceAnim =
-                mWorkspace.getChangeStateAnimation(workspaceState, animated, layerViews);
+                mWorkspace.getChangeStateAnimation(workspaceState, animated, layerViews);// 定义切换时Workspace上的动画 
+        // 设置加载的数据类型  
         if (!LauncherAppState.isDisableAllApps()
                 || contentType == AppsCustomizePagedView.ContentType.Widgets) {
             // Set the content type for the all apps/widgets space
@@ -3355,20 +3357,21 @@ public class Launcher extends Activity
         boolean initialized = getAllAppsButton() != null;
 
         if (animated && initialized) {
-            mStateAnimation = LauncherAnimUtils.createAnimatorSet();
+            mStateAnimation = LauncherAnimUtils.createAnimatorSet();//创建AnimatorSet 
             final AppsCustomizePagedView content = (AppsCustomizePagedView)
-                    toView.findViewById(R.id.apps_customize_pane_content);
+                    toView.findViewById(R.id.apps_customize_pane_content);// 抽屉内容组件
 
-            final View page = content.getPageAt(content.getCurrentPage());
-            final View revealView = toView.findViewById(R.id.fake_page);
+            final View page = content.getPageAt(content.getCurrentPage());// 抽屉当前页  
+            final View revealView = toView.findViewById(R.id.fake_page);// 一个过渡页面，用来实现动画  
 
             final boolean isWidgetTray = contentType == AppsCustomizePagedView.ContentType.Widgets;
+            // 初始化抽屉页面的组件，其中revealView 是一个过渡页，用来实现动画效果的，动画结束后将其隐藏,根据类型分别设置  
             if (isWidgetTray) {
                 revealView.setBackground(res.getDrawable(R.drawable.quantum_panel_dark));
             } else {
                 revealView.setBackground(res.getDrawable(R.drawable.quantum_panel));
             }
-
+            // 先隐藏真实页面，显示过渡页面           // 偏移量置为0  
             // Hide the real page background, and swap in the fake one
             content.setPageBackgroundsVisible(false);
             revealView.setVisibility(View.VISIBLE);
@@ -3378,7 +3381,7 @@ public class Launcher extends Activity
             int width = revealView.getMeasuredWidth();
             int height = revealView.getMeasuredHeight();
             float revealRadius = (float) Math.sqrt((width * width) / 4 + (height * height) / 4);
-
+            // 偏移量置为0  
             revealView.setTranslationY(0);
             revealView.setTranslationX(0);
 
